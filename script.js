@@ -39,7 +39,6 @@ async function checkDrugInteraction(rxCodes) {
         .then(data => {
             // console.log(data.fullInteractionTypeGroup)
             if (data.fullInteractionTypeGroup && data.fullInteractionTypeGroup.length > 0) {
-                console.log(data.fullInteractionTypeGroup)
                 return true
             }
             return false
