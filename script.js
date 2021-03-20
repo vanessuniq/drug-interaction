@@ -24,7 +24,7 @@ form.addEventListener("submit", event => {
             console.log({ patients });
             // initialize a variable that count the number of pt with drug interactions
             const number = numberOfPtWithDrugInteraction(patients);
-            console.log(`Number of patients taking medications with drug interactions: ${number}`)
+            console.log(`Number of patients taking medications with drug interactions: ${number}`);
 
         }
     });
@@ -33,12 +33,13 @@ form.addEventListener("submit", event => {
 
 //  call the api for to check drug interaction.
 
-async function checkDrugInteraction(rxCode) {
-    let interaction = await fetch(`https://rxnav.nlm.nih.gov/REST/interaction/interaction.json?rxcui=${rxCode}`)
+async function checkDrugInteraction(rxCodes) {
+    let interaction = await fetch(`https://rxnav.nlm.nih.gov/REST/interaction/list.json?rxcuis=${rxCodes.join('+')}`)
         .then(resp => resp.json())
         .then(data => {
             // console.log(data.fullInteractionTypeGroup)
-            if (data.interactionTypeGroup.length > 0) {
+            if (data.fullInteractionTypeGroup && data.fullInteractionTypeGroup.length > 0) {
+                console.log(data.fullInteractionTypeGroup)
                 return true
             }
             return false
@@ -51,7 +52,7 @@ async function checkDrugInteraction(rxCode) {
 
 function numberOfPtWithDrugInteraction(patients, number = 0) {
     patients.forEach(patient => {
-        const interaction = patient.medCode.find(code => checkDrugInteraction(code));
+        const interaction = checkDrugInteraction(patient.medCode)
         if (interaction) {
             number += 1;
         } else {
