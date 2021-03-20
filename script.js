@@ -8,7 +8,7 @@ form.addEventListener("submit", event => {
     console.log({ file })
     Papa.parse(file, {
         header: true,
-        complete: function(results) {
+        complete: async function(results) {
             // iterate through each row and save patient's record in object containing the patient id and rx code for med taken
             results.data.forEach(row => {
                 const { CODE, PATIENT } = row;
@@ -18,12 +18,16 @@ form.addEventListener("submit", event => {
                     patients.push(newRecord);
 
                 } else {
-                    record.medCode.push(CODE)
+                    const existingCode = record.medCode.find(code => code === CODE);
+                    if (!existingCode) {
+                        record.medCode.push(CODE)
+                    }
+
                 }
             });
             console.log({ patients });
             // initialize a variable that count the number of pt with drug interactions
-            const number = numberOfPtWithDrugInteraction(patients);
+            const number = await numberOfPtWithDrugInteraction(patients);
             console.log(`Number of patients taking medications with drug interactions: ${number}`);
 
         }
@@ -33,30 +37,17 @@ form.addEventListener("submit", event => {
 
 //  call the api for to check drug interaction.
 
-async function checkDrugInteraction(rxCodes) {
-    let interaction = await fetch(`https://rxnav.nlm.nih.gov/REST/interaction/list.json?rxcuis=${rxCodes.join('+')}`)
-        .then(resp => resp.json())
-        .then(data => {
-            // console.log(data.fullInteractionTypeGroup)
-            if (data.fullInteractionTypeGroup && data.fullInteractionTypeGroup.length > 0) {
-                return true
-            }
-            return false
-        })
-        .catch(error => "")
-    return interaction
-};
-
 // function to find the number of patients take a med with drug interactions
 
-function numberOfPtWithDrugInteraction(patients, number = 0) {
-    patients.forEach(patient => {
-        const interaction = checkDrugInteraction(patient.medCode)
-        if (interaction) {
-            number += 1;
-        } else {
-            console.log({ patient })
+async function numberOfPtWithDrugInteraction(patients, number = 0) {
+
+    for (const patient of patients) {
+        const interactions = await fetch(`https://rxnav.nlm.nih.gov/REST/interaction/list.json?rxcuis=${patient.medCode.join('+')}`)
+            .then(resp => resp.json()).catch(error => "");
+        if (interactions.fullInteractionTypeGroup && interactions.fullInteractionTypeGroup.length > 0) {
+            number++
         }
-    });
+    }
+    console.log({ number })
     return number;
 }
